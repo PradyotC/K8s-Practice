@@ -47,9 +47,30 @@
     ```bash
     kubectl rollout undo deployments web-appdeply -n webapp
     ```
+* **Restart a deployment:** Forces a rolling restart of all pods in a deployment, which is useful for pulling fresh images or applying updated ConfigMaps. 
+    ```bash
+    kubectl rollout restart deployments/mydeploy -n dev
+    ```
 
 ### **Networking & Access**
 * **Port Forwarding:** Forwards local traffic on port 8080 to port 80 on the target service (running in the background).
     ```bash
     kubectl port-forward service/my-service -n webapp 8080:80 --address=0.0.0.0 &
+    ```
+* **Expose a deployment:** Creates a LoadBalancer service to expose your deployment to external traffic. 
+    ```bash
+    kubectl expose deployment.apps/mydeploy -n dev --port=80 --target-port=80 --type=LoadBalancer
+    ```
+
+### **Environment Setup & Teardown (AWS/EKS)**
+* **Configure bash variables:** Sets up and saves persistent environment variables for your AWS Region and Account ID.
+    ```bash
+    echo 'export REGION=us-east-1' >> ~/.bashrc
+    echo 'export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)' >> ~/.bashrc
+    source ~/.bashrc
+    echo "Account: $ACCOUNT_ID | Region: $REGION"
+    ```
+* **Delete an EKS cluster:** Completely removes the specified EKS cluster and its associated AWS resources using `eksctl`.
+    ```bash
+    eksctl delete cluster --name=eks-ec2-pradyot --region=$REGION
     ```
