@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-config
+  namespace: webapp
+data:
+  # You can inject simple key-value pairs
+  LOG_LEVEL: "DEBUG"
+  UI_THEME: "dark-mode"

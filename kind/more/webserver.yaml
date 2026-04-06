@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-appdeply
+  namespace: webapp
+  labels:
+    app: webapp-deploy
+spec:
+  replicas: 2 # Reduced to 2 for easier log reading
+  selector:
+    matchLabels:
+      app: webapp-deploy
+  template:
+    metadata:
+      labels:
+        app: webapp-deploy
+    spec:
+      containers:
+        # ------------------------------------------------
+        # CONTAINER 1: The Main Application
+        # ------------------------------------------------
+        - name: webapp
+          image: allenaira/2048:new1
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          env:
+            # Pulling a single value from the ConfigMap
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: webapp-config
+                  key: LOG_LEVEL
+            # Pulling a single value from the Secret
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-secret
+                  key: API_KEY
+
+        # ------------------------------------------------
+        # CONTAINER 2: The Monitoring Sidecar
+        # ------------------------------------------------
+        - name: sidecar-monitor
+          image: alpine/curl:latest
+          # This script curls the main container every 5 seconds
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)
+                echo "$(date) - Main App Status: HTTP $STATUS"
+                sleep 5
+              done
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
