@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-deploy-svc
+  namespace: dev
+  annotations:
+    # This tells AWS to create a modern Network Load Balancer (NLB)
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    # This is CRITICAL for Fargate: It routes traffic directly to the Pod IPs
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    # This makes it accessible from the internet
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  selector:
+    app: web-deploy
+  ports:
+    - port: 80
+      targetPort: 80
+  type: LoadBalancer

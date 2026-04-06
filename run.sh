@@ -35,3 +35,9 @@ eksctl version
 #     --nodes-max 4 \
 #     --managed \
 #     --asg-access
+
+# eksctl create cluster \
+#     --name eks-fargate-pradyot \
+#     --region $REGION \
+#     --version 1.35 \
+#     --fargate
