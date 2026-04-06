@@ -1,76 +1,117 @@
-# Kubernetes Commands
+# Kubernetes Practice
 
-### **Cluster Management (Kind)**
-* **Create a cluster:** 
-  ```bash
-  kind create cluster --name mycluster --config=config.yaml
-    ```
+A hands-on K8s practice repo covering local Kind clusters and AWS EKS (EC2 + Fargate).
 
-### **Applying & Modifying State**
-* **Apply a configuration:**
-    ```bash
-    kubectl apply -f nginx.yaml
-    ```
-* **Update a container image:** Updates the `webapp` container in the `web-appdeply` deployment to a new image.
-    ```bash
-    kubectl set image deployment.apps/web-appdeply webapp=allenaira/netflix -n webapp
-    ```
-* **Check differences:** Compares the live state against your local manifest file.
-    ```bash
-    kubectl diff -f nginx.yaml
-    ```
+## Repository Structure
 
-### **Viewing & Inspecting Resources**
-* **List namespaces:**
-    ```bash
-    kubectl get ns
-    ```
-* **List cluster nodes:**
-    ```bash
-    kubectl get nodes
-    ```
-* **List all resources in a namespace:**
-    ```bash
-    kubectl get all -n webapp
-    ```
-* **Describe a deployment:** Provides detailed events, labels, and configurations for a specific deployment.
-    ```bash
-    kubectl describe deployment web-appdeply -n webapp
-    ```
+```
+K8s-Practice/
+├── kind/               # Local cluster via Kind
+│   ├── config.yaml     # Kind cluster config (1 control-plane, 2 workers)
+│   ├── ns.yaml         # Namespace: webapp
+│   ├── pod.yaml        # Standalone Pod (learning only)
+│   ├── replicaset.yaml # ReplicaSet (learning only — use Deployments in practice)
+│   ├── webserver.yaml  # Deployment: web-appdeply
+│   └── service.yaml    # ClusterIP Service → web-appdeply
+├── eks-ec2/            # AWS EKS with EC2 nodes
+│   ├── run.sh          # Install kubectl, AWS CLI, eksctl + set env vars
+│   └── ec2-commands.sh # EC2 cluster create/apply/teardown reference
+└── fargate/            # AWS EKS with Fargate
+    ├── fargate-commands.sh       # Fargate cluster setup reference
+    └── fargate-load-balancer.yaml # NLB Service for Fargate pods
+```
 
-### **Rollout Management**
-* **Check rollout status:** Watches the progress of your deployment update.
-    ```bash
-    kubectl rollout status deployments web-appdeply -n webapp
-    ```
-* **Rollback an update:** Reverts to the previous revision if an update fails.
-    ```bash
-    kubectl rollout undo deployments web-appdeply -n webapp
-    ```
-* **Restart a deployment:** Forces a rolling restart of all pods in a deployment, which is useful for pulling fresh images or applying updated ConfigMaps. 
-    ```bash
-    kubectl rollout restart deployments/mydeploy -n dev
-    ```
+## Quick Start
 
-### **Networking & Access**
-* **Port Forwarding:** Forwards local traffic on port 8080 to port 80 on the target service (running in the background).
-    ```bash
-    kubectl port-forward service/my-service -n webapp 8080:80 --address=0.0.0.0 &
-    ```
-* **Expose a deployment:** Creates a LoadBalancer service to expose your deployment to external traffic. 
-    ```bash
-    kubectl expose deployment.apps/mydeploy -n dev --port=80 --target-port=80 --type=LoadBalancer
-    ```
+### Local (Kind)
 
-### **Environment Setup & Teardown (AWS/EKS)**
-* **Configure bash variables:** Sets up and saves persistent environment variables for your AWS Region and Account ID.
-    ```bash
-    echo 'export REGION=us-east-1' >> ~/.bashrc
-    echo 'export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)' >> ~/.bashrc
-    source ~/.bashrc
-    echo "Account: $ACCOUNT_ID | Region: $REGION"
-    ```
-* **Delete an EKS cluster:** Completely removes the specified EKS cluster and its associated AWS resources using `eksctl`.
-    ```bash
-    eksctl delete cluster --name=eks-ec2-pradyot --region=$REGION
-    ```
+```bash
+# 1. Create cluster
+kind create cluster --name mycluster --config=kind/config.yaml
+
+# 2. Apply manifests in order
+kubectl apply -f kind/ns.yaml
+kubectl apply -f kind/webserver.yaml   # Deployment
+kubectl apply -f kind/service.yaml # Service
+
+# 3. Access locally
+kubectl port-forward service/my-service -n webapp 8080:80 --address=0.0.0.0 &
+```
+
+### AWS EKS (EC2)
+
+```bash
+# 1. Install tools and set env vars (source, not execute)
+source eks-ec2/run.sh
+
+# 2. Review and run cluster commands
+# See eks-ec2/ec2-commands.sh
+```
+
+### AWS EKS (Fargate)
+
+```bash
+# Prerequisites: tools installed via eks-ec2/run.sh
+# See fargate/fargate-commands.sh
+```
+
+---
+
+## Kubectl Reference
+
+### Cluster Management (Kind)
+
+```bash
+kind create cluster --name mycluster --config=kind/config.yaml
+kind delete cluster --name mycluster
+```
+
+### Apply & Inspect
+
+```bash
+kubectl apply -f <file.yaml>
+kubectl diff -f <file.yaml>
+kubectl get all -n webapp
+kubectl get nodes
+kubectl get ns
+kubectl describe deployment web-appdeply -n webapp
+```
+
+### Rollout Management
+
+```bash
+# Watch rollout progress
+kubectl rollout status deployments web-appdeply -n webapp
+
+# Roll back to previous version
+kubectl rollout undo deployments web-appdeply -n webapp
+
+# Force restart (useful after ConfigMap changes)
+kubectl rollout restart deployments/web-appdeply -n webapp
+
+# Update image
+kubectl set image deployment.apps/web-appdeply webapp=allenaira/netflix -n webapp
+```
+
+### Networking
+
+```bash
+# Port-forward a service locally
+kubectl port-forward service/my-service -n webapp 8080:80 --address=0.0.0.0 &
+
+# Expose a deployment as LoadBalancer
+kubectl expose deployment.apps/web-appdeply -n webapp --port=80 --target-port=80 --type=LoadBalancer
+```
+
+### Environment Setup (AWS/EKS)
+
+```bash
+# Set env vars for current + future sessions
+export REGION=us-east-1
+export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo 'export REGION=us-east-1' >> ~/.bashrc
+echo 'export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)' >> ~/.bashrc
+
+# Teardown
+eksctl delete cluster --name eks-ec2-pradyot --region $REGION
+```

@@ -1,0 +1,14 @@
+# AWS CLI installer artifacts
+awscliv2.zip
+aws/
+
+# eksctl download artifacts
+eksctl_*.tar.gz
+
+# kubectl checksum file
+kubectl.sha256
+kubectl
+
+# OS artifacts
+.DS_Store
+Thumbs.db

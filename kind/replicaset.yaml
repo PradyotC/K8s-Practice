@@ -1,0 +1,32 @@
+# NOTE: ReplicaSets are rarely used directly in practice.
+# Deployments manage ReplicaSets for you and provide rollout/rollback.
+# This file is kept for learning purposes only.
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: web-myrep
+  namespace: webapp
+  labels:
+    app: webapp-rs
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: webapp-rs
+  template:
+    metadata:
+      labels:
+        app: webapp-rs
+    spec:
+      containers:
+      - name: webapp
+        image: allenaira/2048:new1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
